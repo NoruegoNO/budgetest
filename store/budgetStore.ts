@@ -4,11 +4,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BudgetState, FixedExpense, Transaction } from '@/types';
 import { calculateNextSalaryDate } from '@/utils/dateUtils';
 
-// Create the budget store with persistence
 const useBudgetStore = create<BudgetState>()(
   persist(
     (set, get) => ({
-      // Initial state
       isSetupComplete: false,
       currentBalance: 0,
       targetBalance: 0,
@@ -17,7 +15,6 @@ const useBudgetStore = create<BudgetState>()(
       transactions: [],
       lastSalaryProcessed: null,
 
-      // Actions
       completeSetup: (
         frequency,
         initialDate,
@@ -62,7 +59,7 @@ const useBudgetStore = create<BudgetState>()(
       },
 
       checkAndProcessSalary: () => {
-        const { salaryInfo, lastSalaryProcessed, currentBalance, targetBalance } = get();
+        const { salaryInfo, lastSalaryProcessed, currentBalance } = get();
         if (!salaryInfo) return;
 
         const today = new Date().toDateString();
@@ -80,3 +77,32 @@ const useBudgetStore = create<BudgetState>()(
           isSetupComplete: false,
           currentBalance: 0,
           targetBalance: 0,
+          salaryInfo: null,
+          fixedExpenses: [],
+          transactions: [],
+          lastSalaryProcessed: null,
+        });
+      },
+    }),
+    {
+      name: 'budget-storage',
+      storage: createJSONStorage(() => AsyncStorage),
+      onRehydrateStorage: () => (state) => {
+        console.log('✅ Zustand store hydrated');
+        useBudgetStore.persist.hasHydrated = true;
+        useBudgetStore.persist._hasHydratedFns.forEach((fn) => fn());
+      },
+    }
+  )
+);
+
+// @ts-ignore
+useBudgetStore.persist = {
+  hasHydrated: false,
+  onHydrate: (fn: () => void) => {
+    useBudgetStore.persist._hasHydratedFns.push(fn);
+  },
+  _hasHydratedFns: [] as (() => void)[],
+};
+
+export default useBudgetStore;
