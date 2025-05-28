@@ -79,4 +79,4 @@ const useBudgetStore = create<BudgetState>()(
         set({
           isSetupComplete: false,
           currentBalance: 0,
-          ta
+          targetBalance: 0,
