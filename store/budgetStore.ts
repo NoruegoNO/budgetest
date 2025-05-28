@@ -7,6 +7,7 @@ import { calculateNextSalaryDate } from '@/utils/dateUtils';
 const useBudgetStore = create<BudgetState>()(
   persist(
     (set, get) => ({
+      hydrated: false,
       isSetupComplete: false,
       currentBalance: 0,
       targetBalance: 0,
@@ -74,6 +75,7 @@ const useBudgetStore = create<BudgetState>()(
 
       reset: () => {
         set({
+          hydrated: false,
           isSetupComplete: false,
           currentBalance: 0,
           targetBalance: 0,
@@ -88,21 +90,10 @@ const useBudgetStore = create<BudgetState>()(
       name: 'budget-storage',
       storage: createJSONStorage(() => AsyncStorage),
       onRehydrateStorage: () => (state) => {
-        console.log('✅ Zustand store hydrated');
-        useBudgetStore.persist.hasHydrated = true;
-        useBudgetStore.persist._hasHydratedFns.forEach((fn) => fn());
+        set({ hydrated: true });
       },
     }
   )
 );
-
-// @ts-ignore
-useBudgetStore.persist = {
-  hasHydrated: false,
-  onHydrate: (fn: () => void) => {
-    useBudgetStore.persist._hasHydratedFns.push(fn);
-  },
-  _hasHydratedFns: [] as (() => void)[],
-};
 
 export default useBudgetStore;

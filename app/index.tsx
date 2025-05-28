@@ -1,29 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { View, StyleSheet, ActivityIndicator, Text } from 'react-native';
 import { Redirect } from 'expo-router';
 import useBudgetStore from '@/store/budgetStore';
 import { colors } from '@/constants/colors';
 
 export default function Index() {
-  const [hydrated, setHydrated] = useState(false);
+  const hydrated = useBudgetStore((state) => state.hydrated);
   const isSetupComplete = useBudgetStore((state) => state.isSetupComplete);
   const checkAndProcessSalary = useBudgetStore((state) => state.checkAndProcessSalary);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      try {
-        if (useBudgetStore.persist.hasHydrated()) {
-          clearInterval(interval);
-          console.log("Store er hydrated!");
-          setHydrated(true);
-        }
-      } catch (error) {
-        console.error("Feil ved hydrering:", error);
-      }
-    }, 100);
-
-    return () => clearInterval(interval);
-  }, []);
 
   useEffect(() => {
     if (hydrated && isSetupComplete) {
