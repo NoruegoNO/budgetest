@@ -1,51 +1,61 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { View, StyleSheet, ActivityIndicator, Text } from 'react-native';
 import { Redirect } from 'expo-router';
 import useBudgetStore from '@/store/budgetStore';
 import { colors } from '@/constants/colors';
 
 export default function Index() {
+  const [hydrated, setHydrated] = useState(false);
   const isSetupComplete = useBudgetStore((state) => state.isSetupComplete);
-  const isHydrated = useBudgetStore.persist.hasHydrated();
-  
-  // Force a check for salary payment when app starts
   const checkAndProcessSalary = useBudgetStore((state) => state.checkAndProcessSalary);
-  
+
   useEffect(() => {
-    if (isHydrated && isSetupComplete) {
-      // Check if salary should be processed
+    const interval = setInterval(() => {
+      try {
+        if (useBudgetStore.persist.hasHydrated()) {
+          clearInterval(interval);
+          console.log("Store er hydrated!");
+          setHydrated(true);
+        }
+      } catch (error) {
+        console.error("Feil ved hydrering:", error);
+      }
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (hydrated && isSetupComplete) {
       try {
         checkAndProcessSalary();
       } catch (error) {
-        console.error("Error checking salary:", error);
+        console.error("Feil under lønnssjekk:", error);
       }
     }
-  }, [isHydrated, isSetupComplete]);
-  
-  // Show loading while hydrating
-  if (!isHydrated) {
+  }, [hydrated, isSetupComplete]);
+
+  if (!hydrated) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Loading your budget data...</Text>
+        <Text style={styles.loadingText}>Laster budsjettdata...</Text>
       </View>
     );
   }
-  
-  // Redirect based on setup status
+
   try {
     if (isSetupComplete) {
       return <Redirect href="/home" />;
     } else {
       return <Redirect href="/setup" />;
     }
-  } catch (error) {
-    console.error("Navigation error:", error);
-    // Fallback UI in case of navigation error
+  } catch (error: any) {
+    console.error("Navigasjonsfeil:", error);
     return (
       <View style={styles.loadingContainer}>
-        <Text style={styles.errorText}>Something went wrong.</Text>
-        <Text style={styles.loadingText}>Please restart the app.</Text>
+        <Text style={styles.errorText}>Noe gikk galt.</Text>
+        <Text style={styles.loadingText}>Start appen på nytt.</Text>
       </View>
     );
   }
